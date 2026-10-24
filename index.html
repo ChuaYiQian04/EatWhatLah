@@ -29,7 +29,7 @@
       >
       <nav aria-label="Main navigation">
         <a href="#makan">Let's makan</a><a href="#nearby">Find nearby</a
-        ><a href="#history">Recent spins</a>
+        ><a href="#history">Recent picks</a>
       </nav>
       <label class="theme-label"
         ><span class="sr-only">Colour theme</span
@@ -83,6 +83,8 @@
           <button id="spin" class="primary spin-button">
             Spin the wheel <span data-icon="arrow"></span>
           </button>
+          <button id="anything" class="secondary anything-button" aria-describedby="anything-help"><span data-icon="dice"></span> Anything lah!</button>
+          <p id="anything-help" class="anything-help">No preferences? Get an instant house pick.</p>
           <div class="wheel-settings">
             <label><input id="avoid" type="checkbox" /> Avoid last result</label
             ><label><input id="sound" type="checkbox" /> Sound on</label>
@@ -246,9 +248,9 @@
       <section id="history" class="history-section">
         <div class="card-heading">
           <div>
-            <h2>Recent spins</h2>
+            <h2>Recent picks</h2>
           </div>
-          <span class="muted">Your last 10 spins</span>
+          <span class="muted">Your last 10 picks</span>
         </div>
         <div id="history-list" class="history-list"></div>
       </section>
@@ -262,10 +264,11 @@
       <div id="confetti" aria-hidden="true"></div>
       <button class="dialog-close" id="close-result" aria-label="Close result">
         <span data-icon="close"></span></button
-      ><span class="eyebrow">LET’S MAKAN</span>
+      ><span class="eyebrow" id="result-heading">LET’S MAKAN</span>
       <div class="result-emoji">🍽️</div>
-      <p>Your pick today</p>
+      <p id="result-caption">Your pick today</p>
       <h2 id="winner-name"></h2>
+      <p id="result-note" class="muted" hidden></p>
       <a id="winner-map" class="secondary" target="_blank" rel="noopener" hidden
         >Find on Google Maps ↗</a
       ><button id="spin-again" class="primary">Spin again <span data-icon="refresh"></span></button>

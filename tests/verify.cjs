@@ -6,6 +6,8 @@ for(const file of ['food-data','storage','wheel','nearby','location'])vm.runInCo
 const ctx=new Proxy({},{get:()=>()=>{},set:()=>true});
 async function run(){
 assert(c.FoodData.defaults.length>=30);assert.equal(new Set(c.FoodData.defaults.map(f=>f.name.toLowerCase())).size,c.FoodData.defaults.length);
+assert.equal(c.FoodData.surpriseFoods.length,12);assert.equal(new Set(c.FoodData.surpriseFoods.map(f=>f.id)).size,12);
+const quickState=c.Store.fresh();quickState.history=[{id:'Rice-0',name:'Nasi Lemak',time:Date.now(),mode:'anything'}];c.Store.save(quickState);assert.equal(c.Store.read().history[0].mode,'anything');
 memory.set('eatwhatlah-v1','broken');assert.equal(c.Store.read().selected.length,8);
 const state=c.Store.fresh();state.selected=[];state.theme='midnight';state.custom=[{id:'custom-test',name:'My lunch'},{id:'custom-duplicate',name:'nasi lemak'}];state.history=[{id:'a',name:'Lunch',time:Date.now()}];c.Store.save(state);assert.equal(c.Store.read().selected.length,0);assert.equal(c.Store.read().theme,'midnight');assert.equal(c.Store.read().custom.length,1);assert.equal(c.Store.read().history.length,1);
 const wheel=new c.MakanWheel({getContext:()=>ctx});assert.equal(await wheel.spin(),null);

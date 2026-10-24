@@ -15,6 +15,8 @@
     editing = null,
     confirmAction = null,
     audio = null,
+    resultMode = 'wheel',
+    resultReveal = 0,
     toastTimer,
     storageWarned = false;
   const placesPerPage = 8;
@@ -52,6 +54,7 @@
     $("selected-count").textContent = items.length;
     $("wheel-count").textContent = items.length + " choices";
     $("spin").disabled = wheel.busy || searching || locating || !items.length;
+    $("anything").disabled = wheel.busy || searching || locating;
     $("wheel-status").textContent = items.length
       ? items.length === 1
         ? "One choice selected."
@@ -243,6 +246,7 @@
   function renderHistory() {
     const nodes = state.history.map((h) => {
       const item = el("div", "history-item");
+      if (h.mode === 'anything') item.append(el('span', 'history-mode', 'Anything lah!'));
       item.append(
         el("strong", "", h.name),
         el(
@@ -264,7 +268,7 @@
         el(
           "div",
           "empty-history",
-          "Your picks will appear here after a spin.",
+          "Your picks will appear here.",
         ),
       );
   }
@@ -321,6 +325,7 @@
     customIcons.disabled = value;
     [
       "select-all",
+      "anything",
       "clear-all",
       "reset-defaults",
       "reset-all",
@@ -340,19 +345,23 @@
     renderFoods();
     renderPlaces();
   }
-  async function spin() {
-    if (wheel.busy || searching || locating || !options().length) return;
+  function prepareAudio() {
     if (state.sound) {
       try {
         const Audio = window.AudioContext || window.webkitAudioContext;
         if (Audio) {
           audio = audio || new Audio();
-          audio.resume().catch(() => {});
+          return audio.resume().catch(() => {});
         }
       } catch {
         toast("Sound is unavailable in this browser.");
       }
     }
+    return Promise.resolve();
+  }
+  async function spin() {
+    if (wheel.busy || searching || locating || !options().length) return;
+    const audioReady = prepareAudio();
     const promise = wheel.spin(state.history[0]?.id, state.avoid, tick);
     $("spin").disabled = true;
     $("spin").textContent = "Spinning…";
@@ -366,14 +375,32 @@
     );
     updateWheel();
     if (!winner) return;
+    showResult(winner, 'wheel', audioReady);
+  }
+  function anythingLah() {
+    if (wheel.busy || searching || locating) return;
+    const audioReady = prepareAudio(),
+      pool = FoodData.surpriseFoods.filter(food => !(state.avoid && FoodData.surpriseFoods.length > 1 && food.id === state.history[0]?.id));
+    const winner = pool[Math.floor(Math.random() * pool.length)];
+    if (winner) showResult(winner, 'anything', audioReady);
+  }
+  function showResult(winner, mode, audioReady) {
+    resultMode = mode;
+    const reveal = ++resultReveal, surprise = mode === 'anything';
     state.history.unshift({
       id: winner.id,
       name: winner.name,
       time: Date.now(),
+      mode,
     });
     state.history = state.history.slice(0, 10);
     save();
     renderHistory();
+    $("result-heading").textContent = surprise ? 'ANYTHING LAH!' : 'LET’S MAKAN';
+    $("result-caption").textContent = surprise ? 'No debate. This one, lah.' : 'Your pick today';
+    $("result-note").hidden = !surprise;
+    $("result-note").textContent = surprise ? `An instant pick from ${FoodData.surpriseFoods.length} house favourites.` : '';
+    $("spin-again").replaceChildren(document.createTextNode(surprise ? 'Anything else lah? ' : 'Spin again '), UI.icon(surprise ? 'dice' : 'refresh'));
     $("winner-name").textContent = winner.name;
     $("winner-map").hidden = !winner.nearby;
     if (winner.nearby) $("winner-map").href = Nearby.mapLink(winner);
@@ -388,13 +415,14 @@
         $("confetti").append(bit);
       }
     $("result-dialog").showModal();
-    revealSound();
+    audioReady.then(() => { if (reveal === resultReveal && $("result-dialog").open) revealSound(); });
   }
   $("spin").onclick = spin;
+  $("anything").onclick = anythingLah;
   $("close-result").onclick = () => $("result-dialog").close();
   $("spin-again").onclick = () => {
     $("result-dialog").close();
-    spin();
+    if (resultMode === 'anything') anythingLah(); else spin();
   };
   $("theme").value = state.theme;
   document.body.dataset.theme = state.theme;

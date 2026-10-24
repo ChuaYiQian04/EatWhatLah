@@ -66,7 +66,7 @@ window.Store = (() => {
               typeof h.id === "string",
           )
           .slice(0, 10)
-          .map((h) => ({ id: h.id, name: h.name, time: h.time }));
+          .map((h) => ({ id: h.id, name: h.name, time: h.time, mode: h.mode === 'anything' ? 'anything' : 'wheel' }));
       return result;
     } catch (error) {
       if (error.name !== "SyntaxError") available = false;

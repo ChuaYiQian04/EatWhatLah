@@ -1,4 +1,8 @@
 /* Shared icon and picker controls, loaded after the page styles. */
+.anything-button { width:100%; margin-top:10px; min-height:42px; border-style:dashed; color:var(--teal); background:transparent; }
+.anything-button:hover:not(:disabled) { background:var(--soft); }
+.anything-help { font-size:10px; text-align:center; color:var(--muted); margin:6px 0 0; }
+.history-mode { display:block; font-size:9px; font-weight:600; color:var(--teal); margin-top:5px; }
 .ui-icon { width:18px; height:18px; flex:0 0 18px; display:block; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
 [data-icon], .icon-slot { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; line-height:0; }
 .search > .icon-slot { width:20px; height:20px; color:var(--teal); }

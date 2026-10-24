@@ -36,8 +36,32 @@ async function run(){
       }
     }
     await evaluate("document.getElementById('clear-all').click()");assert.equal(await evaluate("document.getElementById('spin').disabled"),true);
+    assert.equal(await evaluate("document.getElementById('anything').disabled"),false);
+    await evaluate(`window.__randomBeforeAnything=Math.random;Math.random=()=>0;document.getElementById('avoid').checked=true;document.getElementById('avoid').dispatchEvent(new Event('change'));document.getElementById('anything').click();`);
+    assert.equal(await evaluate(`document.getElementById('result-dialog').open`),true);
+    assert.equal(await evaluate(`document.getElementById('result-heading').textContent`),'ANYTHING LAH!');
+    assert.equal(await evaluate(`FoodData.surpriseFoods.some(food=>food.name===document.getElementById('winner-name').textContent)`),true);
+    const firstQuickPick=await evaluate(`document.getElementById('winner-name').textContent`);
+    await evaluate(`document.getElementById('spin-again').click()`);
+    assert.notEqual(await evaluate(`document.getElementById('winner-name').textContent`),firstQuickPick,'Anything lah did not avoid previous result');
+    assert.equal(await evaluate(`document.getElementById('wheel-count').textContent`),'0 choices');
+    assert.equal(await evaluate(`document.querySelectorAll('.food-row input:checked').length`),0);
+    assert.equal(await evaluate(`document.getElementById('winner-map').hidden`),true);
+    await evaluate(`document.getElementById('close-result').click();Math.random=window.__randomBeforeAnything;document.getElementById('avoid').checked=false;document.getElementById('avoid').dispatchEvent(new Event('change'));`);
+    await send('Page.reload');await delay(400);
+    assert.equal(await evaluate(`document.querySelector('.history-item .history-mode').textContent`),'Anything lah!');
     await evaluate("document.getElementById('select-all').click()");assert.equal(await evaluate("document.querySelectorAll('.food-row input:checked').length"),35);
     await evaluate("document.getElementById('reset-defaults').click();document.getElementById('confirm-ok').click()");
+    await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
+    await evaluate(`document.getElementById('spin').click()`);
+    assert.equal(await evaluate(`document.getElementById('anything').disabled`),true);
+    await delay(250);
+    assert.equal(await evaluate(`document.getElementById('result-dialog').open`),true);
+    assert.equal(await evaluate(`document.getElementById('result-heading').textContent`),'LET’S MAKAN');
+    assert.equal(await evaluate(`document.getElementById('result-note').hidden`),true);
+    assert.equal(await evaluate(`document.getElementById('spin-again').textContent.trim()`),'Spin again');
+    await evaluate(`document.getElementById('close-result').click()`);
+    await send('Emulation.setEmulatedMedia',{features:[]});
     await evaluate(`document.getElementById('custom-name').value='Browser test meal';document.querySelector('#custom-icon-picker input[value="🍕"]').click();document.getElementById('custom-form').requestSubmit();`);
     assert.equal(await evaluate(`document.querySelector('.food-row:last-child .food-icon').textContent`),'🍕');
     await send('Page.reload');await delay(400);

@@ -32,6 +32,10 @@ window.FoodData = (() => {
     Desserts: "🍧",
     Others: "🍲",
   };
+  const defaults = Object.entries(groups).flatMap(([category, names]) =>
+    names.map((name, i) => ({ id: category + "-" + i, name, category })),
+  );
+  const houseFavourites = ['Nasi Lemak', 'Chicken Rice', 'Nasi Kandar', 'Char Kuey Teow', 'Curry Laksa', 'Pan Mee', 'Chicken Chop', 'Pizza', 'Burger', 'Roti Canai', 'Satay', 'Dim Sum'];
   return {
     groups,
     icons,
@@ -45,8 +49,7 @@ window.FoodData = (() => {
       {icon:'🍞',label:'Bread'}, {icon:'🍧',label:'Dessert'},
       {icon:'🍰',label:'Cake'}, {icon:'☕',label:'Coffee'},
     ],
-    defaults: Object.entries(groups).flatMap(([category, names]) =>
-      names.map((name, i) => ({ id: category + "-" + i, name, category })),
-    ),
+    defaults,
+    surpriseFoods: defaults.filter(food => houseFavourites.includes(food.name)),
   };
 })();

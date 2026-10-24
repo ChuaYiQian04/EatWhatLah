@@ -12,6 +12,8 @@ No installation, Node.js, npm, backend, database, account, API key or build step
 
 ## Features
 
+- **Anything lah!** instantly picks from 12 house favourites when you have no preferences, even with an empty checklist. It leaves your selected menu and wheel unchanged, respects **Avoid last result** and **Sound on**, and records the choice in history. **Anything else lah?** gives another instant suggestion. This shortlist does not apply dietary filters or use nearby places.
+
 - Search and seven category filters; Select All and Clear All apply to the complete food menu. Nearby places have separate selection controls.
 - Custom foods with trimmed names, duplicate validation, editing, deletion and 16 selectable food icons. Icons remain editable and persist across reloads; older custom foods receive a default icon.
 - A 4.8-second eased Canvas wheel, fixed pointer, result dialog and confetti. Enable **Sound on** for spinning ticks and a short ascending chime when the result appears. Sounds are synthesized locally and work offline. Reduced motion uses a brief transition without confetti.

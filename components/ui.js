@@ -1,6 +1,7 @@
 /* Shared, file://-safe UI primitives. No external icons or HTML interpolation. */
 window.UI = (() => {
   const paths = {
+    dice: ['M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z', 'M7 7h.01M17 7h.01M12 12h.01M7 17h.01M17 17h.01'],
     search: ['M21 21l-5-5', 'M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0'],
     location: ['M12 22s7-6 7-13A7 7 0 0 0 5 9c0 7 7 13 7 13Z', 'M15 9a3 3 0 1 1-6 0 3 3 0 0 1 6 0'],
     arrow: ['M6 18 18 6M6 6h12v12'],
