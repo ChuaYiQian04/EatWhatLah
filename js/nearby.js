@@ -1,5 +1,9 @@
 window.Nearby = (() => {
   const cache = new Map();
+  const services = {
+    primary: 'https://overpass-api.de/api/interpreter',
+    alternate: 'https://overpass.private.coffee/api/interpreter',
+  };
   const rad = (d) => (d * Math.PI) / 180;
   function distance(a, b, c, d) {
     const x =
@@ -15,25 +19,25 @@ window.Nearby = (() => {
       encodeURIComponent(place.name + " " + place.lat + "," + place.lon)
     );
   }
-  async function search(lat, lon, radius) {
+  async function search(lat, lon, radius, service = 'primary') {
     if (
       !Number.isFinite(lat) ||
       !Number.isFinite(lon) ||
       Math.abs(lat) > 90 ||
       Math.abs(lon) > 180 ||
-      ![1000, 3000, 5000, 10000].includes(radius)
+      ![1000, 3000, 5000, 10000].includes(radius) || !Object.hasOwn(services, service)
     )
       throw new Error(
         "Enter a latitude from −90 to 90 and longitude from −180 to 180.",
       );
-    const key = [lat.toFixed(4), lon.toFixed(4), radius].join(":");
+    const key = [lat.toFixed(4), lon.toFixed(4), radius, service].join(":");
     const existing = cache.get(key);
     if (existing && Date.now() - existing.time < 300000) return existing.items;
     const controller = new AbortController(),
       timer = setTimeout(() => controller.abort(), 30000);
     try {
       const query = `[out:json][timeout:22];nwr[amenity~"^(restaurant|cafe|fast_food)$"](around:${radius},${lat},${lon});out center tags 150;`;
-      const response = await fetch("https://overpass-api.de/api/interpreter", {
+      const response = await fetch(services[service], {
         method: "POST",
         body: new URLSearchParams({ data: query }),
         signal: controller.signal,
@@ -42,7 +46,7 @@ window.Nearby = (() => {
         throw new Error(
           response.status === 429
             ? "The public search service is busy. Wait a minute, then retry."
-            : "The public search service is unavailable. Please try again later.",
+            : `The nearby search service returned an error (${response.status}). Retry later or try the alternate service.`,
         );
       const data = await response.json();
       if (!Array.isArray(data.elements))

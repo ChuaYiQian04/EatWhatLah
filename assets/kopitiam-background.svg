@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="360" viewBox="0 0 360 360" fill="none" stroke="#76836e" stroke-opacity=".17" stroke-width="1.2">
+  <!-- Original ceramic lattice, floral tile and kopi-cup motifs. -->
+  <path d="M0 0h360v360H0ZM0 180h360M180 0v360"/>
+  <path d="m90 18 72 72-72 72-72-72Zm180 180 72 72-72 72-72-72Z"/>
+  <g id="flower">
+    <path d="M90 62c-25-30-46 0-22 18-30 25 0 46 18 22 25 30 46 0 22-18 30-25 0-46-18-22Z"/>
+    <circle cx="90" cy="90" r="8"/>
+  </g>
+  <use href="#flower" x="180" y="180"/>
+  <g id="cup">
+    <path d="M243 84h44v15a22 22 0 0 1-44 0ZM287 87h7a10 10 0 0 1 0 20h-8M236 124h60M252 69c-7-9 7-9 0-18M267 69c-7-9 7-9 0-18M282 69c-7-9 7-9 0-18"/>
+    <path d="m270 19 3 6-3 6-3-6ZM215 90l-6 3-6-3 6-3ZM326 90l6 3 6-3-6-3Z"/>
+  </g>
+  <use href="#cup" x="-180" y="180"/>
+  <path d="M0 0a20 20 0 0 1 20 20M180 0a20 20 0 0 0-20 20M0 180a20 20 0 0 0 20-20M180 180a20 20 0 0 1-20-20M180 180a20 20 0 0 1 20 20M360 180a20 20 0 0 0-20 20M180 360a20 20 0 0 0 20-20M360 360a20 20 0 0 1-20-20"/>
+</svg>

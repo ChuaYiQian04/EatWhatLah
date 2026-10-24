@@ -1,8 +1,8 @@
 // Optional developer checks; the application needs no runtime dependencies.
 const fs=require('fs'),vm=require('vm'),assert=require('assert'),path=require('path');
 const root=path.join(__dirname,'..'),memory=new Map();
-const c={console,Math:Object.create(Math),Date,Set,Map,JSON,Number,String,Array,URLSearchParams,AbortController,setTimeout,clearTimeout};c.window=c;c.matchMedia=()=>({matches:false});let clock=0;c.requestAnimationFrame=fn=>{clock+=100;setImmediate(()=>fn(clock));};c.localStorage={getItem:k=>memory.get(k)||null,setItem:(k,v)=>memory.set(k,v)};vm.createContext(c);
-for(const file of ['food-data','storage','wheel','nearby'])vm.runInContext(fs.readFileSync(root+'/js/'+file+'.js','utf8'),c);
+const c={console,Math:Object.create(Math),Date,Set,Map,JSON,Number,String,Array,URLSearchParams,AbortController,setTimeout,clearTimeout,location:{protocol:'file:'},navigator:{},document:{},isSecureContext:true};c.window=c;c.matchMedia=()=>({matches:false});let clock=0;c.requestAnimationFrame=fn=>{clock+=100;setImmediate(()=>fn(clock));};c.localStorage={getItem:k=>memory.get(k)||null,setItem:(k,v)=>memory.set(k,v)};vm.createContext(c);
+for(const file of ['food-data','storage','wheel','nearby','location'])vm.runInContext(fs.readFileSync(root+'/js/'+file+'.js','utf8'),c);
 const ctx=new Proxy({},{get:()=>()=>{},set:()=>true});
 async function run(){
 assert(c.FoodData.defaults.length>=30);assert.equal(new Set(c.FoodData.defaults.map(f=>f.name.toLowerCase())).size,c.FoodData.defaults.length);
@@ -14,7 +14,14 @@ wheel.setItems([{id:'a',name:'A'},{id:'b',name:'B'}]);c.Math.random=()=>0;assert
 assert(Math.abs(c.Nearby.distance(0,0,0,1)-111195)<10);assert.equal(c.Nearby.distance(3,100,3,100),0);
 let requests=0;c.fetch=async()=>{requests++;return {ok:true,json:async()=>({elements:[{type:'node',id:1,lat:3,lon:101,tags:{name:'Cafe',amenity:'cafe'}},{type:'way',id:2,center:{lat:3,lon:101},tags:{name:'Cafe',amenity:'cafe'}},{type:'way',id:3,center:{lat:3.001,lon:101},tags:{amenity:'restaurant'}},{type:'way',id:4,tags:{name:'No coordinates'}}]})};};
 const places=await c.Nearby.search(3,101,1000);assert.equal(places.length,2);assert.equal(places[0].name,'Cafe');assert.equal(places[1].name,'Unnamed restaurant');await c.Nearby.search(3,101,1000);assert.equal(requests,1);await assert.rejects(()=>c.Nearby.search(91,101,1000));
-const html=fs.readFileSync(root+'/index.html','utf8');for(const ref of html.matchAll(/(?:src|href)="((?:js|css)\/[^"#]+)"/g))assert(fs.existsSync(root+'/'+ref[1]));
-const ids=[...html.matchAll(/id="([^"]+)"/g)].map(m=>m[1]);assert.equal(ids.length,new Set(ids).size);const app=fs.readFileSync(root+'/js/app.js','utf8');for(const m of app.matchAll(/\$\('([^']+)'\)/g))assert(ids.includes(m[1]),'Missing ID '+m[1]);for(const file of fs.readdirSync(root+'/js'))new vm.Script(fs.readFileSync(root+'/js/'+file,'utf8'));assert(!/innerHTML|\balert\(/.test(app));
-console.log('PASS: syntax, assets, DOM references, catalogue, persistence/recovery, wheel alignment (1–150 options), avoid-last, distance, Overpass parsing/deduplication/cache/validation.');
+state.custom=[{id:'custom-icon',name:'Icon meal',icon:'🍕'},{id:'custom-fallback',name:'Old meal',icon:'invalid'}];c.Store.save(state);assert.equal(c.Store.read().custom[0].icon,'🍕');assert.equal(c.Store.read().custom[1].icon,'🍲');
+c.isSecureContext=false;await assert.rejects(()=>c.LocationService.current(),/secure browser context/);c.isSecureContext=true;await assert.rejects(()=>c.LocationService.current(),/does not support/);
+c.document.permissionsPolicy={allowsFeature:()=>false};c.navigator.geolocation={};await assert.rejects(()=>c.LocationService.current(),/host or preview/);delete c.document.permissionsPolicy;
+for(const code of [1,2,3]){c.navigator.geolocation={getCurrentPosition:(_,error)=>error({code})};await assert.rejects(()=>c.LocationService.current(),new RegExp(code===1?'Local files':code===2?'device could not':'timed out'));}
+c.navigator.geolocation={getCurrentPosition:success=>success({coords:{latitude:3,longitude:101}})};assert.equal((await c.LocationService.current()).latitude,3);
+let watchdog; c.setTimeout=callback=>{watchdog=callback;return 0;};c.clearTimeout=()=>{};c.navigator.geolocation={getCurrentPosition:()=>{}};const stalled=c.LocationService.current();watchdog();await assert.rejects(()=>stalled,/timed out/);c.setTimeout=setTimeout;c.clearTimeout=clearTimeout;
+let alternateRequests=0;c.fetch=async url=>{alternateRequests++;assert(url.includes('private.coffee'));return {ok:true,json:async()=>({elements:[]})};};await c.Nearby.search(3,101,1000,'alternate');assert.equal(alternateRequests,1);c.fetch=async()=>({ok:false,status:429});await assert.rejects(()=>c.Nearby.search(4,101,1000),/busy/);
+const html=fs.readFileSync(root+'/index.html','utf8');for(const ref of html.matchAll(/(?:src|href)="((?:js|css|components|assets)\/[^"#]+)"/g))assert(fs.existsSync(root+'/'+ref[1]));
+const ids=[...html.matchAll(/id="([^"]+)"/g)].map(m=>m[1]);assert.equal(ids.length,new Set(ids).size);const app=fs.readFileSync(root+'/js/app.js','utf8');for(const m of app.matchAll(/\$\(['"]([^'"]+)['"]\)/g))assert(ids.includes(m[1]),'Missing ID '+m[1]);for(const folder of ['js','components'])for(const file of fs.readdirSync(root+'/'+folder).filter(f=>f.endsWith('.js')))new vm.Script(fs.readFileSync(root+'/'+folder+'/'+file,'utf8'));assert(!/innerHTML|\balert\(/.test(app));
+console.log('PASS: syntax, assets, DOM references, catalogue, icon persistence/migration, location success/denial/timeout/unavailable/insecure/policy states, storage recovery, wheel alignment (1–150 options), avoid-last, distance, Overpass parsing/deduplication/cache/validation.');
 }run().catch(e=>{console.error(e);process.exitCode=1;});

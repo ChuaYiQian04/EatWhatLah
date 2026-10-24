@@ -1,0 +1,26 @@
+/* Shared icon and picker controls, loaded after the page styles. */
+.ui-icon { width:18px; height:18px; flex:0 0 18px; display:block; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+[data-icon], .icon-slot { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; line-height:0; }
+.search > .icon-slot { width:20px; height:20px; color:var(--teal); }
+.search input { min-height:42px; line-height:22px; }
+.online-note, .map-link { display:inline-flex; align-items:center; gap:6px; }
+.online-note .ui-icon, .map-link .ui-icon { width:14px; height:14px; flex-basis:14px; }
+.icon-button, .dialog-close { display:inline-grid; place-items:center; padding:6px; width:32px; height:32px; border-radius:4px; }
+.icon-button:hover, .dialog-close:hover { background:var(--soft); }
+.food-icon { flex:0 0 28px; width:28px; height:28px; line-height:1; font-family:"Apple Color Emoji","Segoe UI Emoji",sans-serif; }
+input[type="checkbox"] { margin:0; vertical-align:middle; }
+.icon-picker { border:0; padding:0; margin:14px 0 0; min-width:0; }
+.icon-picker legend { padding:0; margin-bottom:7px; font-size:11px; font-weight:600; }
+.icon-grid { display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:6px; }
+.icon-grid label { display:block; position:relative; margin:0; cursor:pointer; }
+#edit-form .icon-grid label { margin:0; }
+.icon-grid input { position:absolute; opacity:0; width:1px; height:1px; margin:0; padding:0; }
+.icon-grid span { display:grid; place-items:center; height:34px; font-size:19px; line-height:1; border:1px solid var(--line); border-radius:5px; background:var(--card); font-family:"Apple Color Emoji","Segoe UI Emoji",sans-serif; }
+.icon-grid input:checked + span { border:2px solid var(--teal); background:var(--soft); box-shadow:0 0 0 1px var(--teal); }
+.icon-grid input:focus-visible + span { outline:3px solid var(--red); outline-offset:2px; }
+.icon-grid input:disabled + span { opacity:.5; cursor:wait; }
+.icon-grid label:hover span { background:var(--soft); }
+.location-help { margin-top:9px; font-size:11px; color:var(--muted); }
+.location-help summary { color:var(--teal); }
+.location-help p { margin:8px 0 0; line-height:1.7; }
+@media(max-width:360px) { .icon-grid { gap:4px; } .icon-grid span { font-size:17px; } }

@@ -21,6 +21,16 @@ window.MakanWheel = class {
     this.items = items.slice();
     this.draw();
   }
+  setTheme(theme) {
+    const palettes = {
+      kopitiam: ['#edc45b','#337568','#ad4432','#e7b486','#91a991','#f3dc9b','#913b30','#6f9d95'],
+      cute: ['#f2bdc8','#77638d','#b3456a','#f2d3b3','#bdcba5','#f6dce5','#865477','#c8b3d9'],
+      midnight: ['#d5b36b','#426d64','#934f42','#c28c65','#879c7b','#d7c9a0','#7e4442','#709d91'],
+      minimal: ['#d0d6c6','#607566','#899781','#dfe2d9','#aeb8a3','#e8e8de','#506555','#9aab9d'],
+    };
+    this.colors = palettes[theme] || palettes.kopitiam;
+    this.draw();
+  }
   draw() {
     const c = this.ctx,
       n = this.items.length,
@@ -54,7 +64,13 @@ window.MakanWheel = class {
       c.rotate(start + step / 2);
       c.textAlign = "right";
       c.textBaseline = "middle";
-      c.fillStyle = [1, 2, 6].includes(i % 8) ? "#fff9e8" : "#243b35";
+      // Choose the higher-contrast label colour for each theme's segment fill.
+      const luminance = hex => {
+        const rgb = hex.match(/[a-f0-9]{2}/gi).map(v => parseInt(v,16)/255).map(v => v <= .04045 ? v/12.92 : ((v+.055)/1.055)**2.4);
+        return rgb[0]*.2126 + rgb[1]*.7152 + rgb[2]*.0722;
+      };
+      const light = '#fff9e8', dark = '#243b35', fill = luminance(this.colors[i % this.colors.length]);
+      c.fillStyle = (luminance(light)+.05)/(fill+.05) > (fill+.05)/(luminance(dark)+.05) ? light : dark;
       c.font = `bold ${n > 24 ? 17 : n > 14 ? 21 : 26}px sans-serif`;
       const label =
         n > 24

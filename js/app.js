@@ -9,6 +9,8 @@
     nearbySelected = new Set(),
     lastSearch = null,
     searching = false,
+    locating = false,
+    locationRequest = 0,
     editing = null,
     confirmAction = null,
     audio = null,
@@ -19,6 +21,9 @@
     ...foods().filter((f) => state.selected.includes(f.id)),
     ...places.filter((f) => nearbySelected.has(f.id)),
   ];
+  UI.mountIcons();
+  const customIcons = UI.iconPicker($("custom-icon-picker"), "custom-icon"),
+    editIcons = UI.iconPicker($("edit-icon-picker"), "edit-icon");
   function el(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -44,7 +49,7 @@
     wheel.setItems(items);
     $("selected-count").textContent = items.length;
     $("wheel-count").textContent = items.length + " choices";
-    $("spin").disabled = wheel.busy || !items.length;
+    $("spin").disabled = wheel.busy || searching || locating || !items.length;
     $("wheel-status").textContent = items.length
       ? items.length === 1
         ? "One choice selected."
@@ -93,19 +98,21 @@
         };
         label.append(
           check,
-          el("span", "food-icon", FoodData.icons[food.category]),
+          el("span", "food-icon", food.icon || FoodData.icons[food.category]),
           el("span", "", food.name),
         );
         row.append(label);
         if (food.custom) {
-          const edit = el("button", "icon-button", "✎"),
-            remove = el("button", "icon-button", "×");
+          const edit = el("button", "icon-button"),
+            remove = el("button", "icon-button");
+          edit.append(UI.icon('edit')); remove.append(UI.icon('close'));
           edit.setAttribute("aria-label", "Edit " + food.name);
           remove.setAttribute("aria-label", "Delete " + food.name);
           edit.disabled = remove.disabled = wheel.busy;
           edit.onclick = () => {
             editing = food.id;
             $("edit-name").value = food.name;
+            editIcons.value = food.icon;
             $("edit-dialog").showModal();
           };
           remove.onclick = () =>
@@ -175,10 +182,12 @@
       name,
       category: "Others",
       custom: true,
+      icon: customIcons.value,
     };
     state.custom.push(food);
     state.selected.push(food.id);
     $("custom-name").value = "";
+    customIcons.value = '🍲';
     category = "All";
     $("search").value = "";
     save();
@@ -192,7 +201,7 @@
     const name = $("edit-name").value.trim();
     if (!validName(name, editing)) return;
     const food = state.custom.find((f) => f.id === editing);
-    if (food) food.name = name;
+    if (food) { food.name = name; food.icon = editIcons.value; }
     $("edit-dialog").close();
     save();
     renderFoods();
@@ -278,7 +287,36 @@
       /* Sound is optional when browser audio is unavailable. */
     }
   }
+  function revealSound() {
+    if (!state.sound || !audio || audio.state !== "running") return;
+    try {
+      // A short ascending C-major chime, synthesized locally for offline use.
+      const start = audio.currentTime;
+      [523.25, 659.25, 783.99, 1046.5].forEach((frequency, index) => {
+        const oscillator = audio.createOscillator(),
+          gain = audio.createGain(),
+          at = start + index * 0.11,
+          duration = index === 3 ? 0.5 : 0.28;
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(frequency, at);
+        gain.gain.setValueAtTime(0, at);
+        gain.gain.linearRampToValueAtTime(0.07, at + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.001, at + duration);
+        oscillator.connect(gain);
+        gain.connect(audio.destination);
+        oscillator.onended = () => {
+          oscillator.disconnect();
+          gain.disconnect();
+        };
+        oscillator.start(at);
+        oscillator.stop(at + duration + 0.02);
+      });
+    } catch {
+      /* Revealing the result must still work if browser audio is unavailable. */
+    }
+  }
   function lock(value) {
+    customIcons.disabled = value;
     [
       "select-all",
       "clear-all",
@@ -290,6 +328,7 @@
       "latitude",
       "longitude",
       "retry",
+      "try-alternate",
       "nearby-all",
       "nearby-clear",
     ].forEach((id) => ($(id).disabled = value));
@@ -300,7 +339,7 @@
     renderPlaces();
   }
   async function spin() {
-    if (wheel.busy || searching || !options().length) return;
+    if (wheel.busy || searching || locating || !options().length) return;
     if (state.sound) {
       try {
         const Audio = window.AudioContext || window.webkitAudioContext;
@@ -321,7 +360,7 @@
     lock(false);
     $("spin").replaceChildren(
       document.createTextNode("Spin the wheel "),
-      el("span", "", "↗"),
+      UI.icon('arrow'),
     );
     updateWheel();
     if (!winner) return;
@@ -347,6 +386,7 @@
         $("confetti").append(bit);
       }
     $("result-dialog").showModal();
+    revealSound();
   }
   $("spin").onclick = spin;
   $("close-result").onclick = () => $("result-dialog").close();
@@ -356,9 +396,11 @@
   };
   $("theme").value = state.theme;
   document.body.dataset.theme = state.theme;
+  wheel.setTheme(state.theme);
   $("theme").onchange = () => {
     state.theme = $("theme").value;
     document.body.dataset.theme = state.theme;
+    wheel.setTheme(state.theme);
     save();
   };
   ["avoid", "sound"].forEach((id) => {
@@ -397,7 +439,8 @@
           ),
         );
         label.append(check, body);
-        const link = el("a", "", "Map ↗");
+        const link = el("a", "map-link", "Map");
+        link.append(UI.icon('arrow'));
         link.href = Nearby.mapLink(place);
         link.target = "_blank";
         link.rel = "noopener";
@@ -410,20 +453,29 @@
       }),
     );
   }
-  async function search(lat, lon) {
+  async function search(lat, lon, service = 'primary') {
     if (searching || wheel.busy) return;
+    // Manual search supersedes an outstanding device request; stale callbacks cannot overwrite it.
+    locationRequest++;
+    locating = false;
     searching = true;
-    lastSearch = { lat, lon };
+    $("locate").replaceChildren(UI.icon('location'), document.createTextNode('Use my location'));
+    $("locate").removeAttribute('aria-busy');
+    lastSearch = { lat, lon, service };
     $("locate").disabled = true;
     $("retry").hidden = true;
+    $("try-alternate").hidden = true;
     $("nearby-status").className = "loading";
     $("nearby-status").textContent =
       "Finding nearby food. This may take up to 30 seconds…";
+    $("nearby-results").setAttribute('aria-busy','true');
+    $("reset-all").disabled = true;
+    updateWheel();
     document
       .querySelectorAll("#coordinates button,#radius")
       .forEach((n) => (n.disabled = true));
     try {
-      const results = await Nearby.search(lat, lon, Number($("radius").value));
+      const results = await Nearby.search(lat, lon, Number($("radius").value), service);
       if (wheel.busy) {
         toast("Search is ready. Retry after the wheel stops.");
         return;
@@ -442,13 +494,17 @@
         error.message +
         (places.length ? " Previous results are still shown." : "");
       $("retry").hidden = false;
+      $("try-alternate").hidden = service === 'alternate';
     } finally {
       searching = false;
+      $("nearby-results").removeAttribute('aria-busy');
+      $("reset-all").disabled = wheel.busy;
       $("nearby-status").className = "";
       $("locate").disabled = wheel.busy;
       document
         .querySelectorAll("#coordinates button,#radius")
         .forEach((n) => (n.disabled = wheel.busy));
+      updateWheel();
     }
   }
   $("coordinates").onsubmit = (e) => {
@@ -456,39 +512,44 @@
     if (!$("latitude").value.trim() || !$("longitude").value.trim()) return;
     search(Number($("latitude").value), Number($("longitude").value));
   };
-  $("locate").onclick = () => {
-    if (!navigator.geolocation) {
-      $("nearby-status").textContent =
-        "Location is unavailable in this browser. Enter coordinates manually.";
-      $("manual-details").open = true;
-      return;
-    }
+  $("locate").onclick = async () => {
+    if (locating || searching || wheel.busy) return;
+    const request = ++locationRequest;
+    locating = true;
     $("locate").disabled = true;
+    $("locate").setAttribute('aria-busy','true');
+    $("locate").replaceChildren(UI.icon('location'),document.createTextNode('Locating…'));
+    $("retry").hidden = true;
+    $("try-alternate").hidden = true;
     $("nearby-status").textContent = "Waiting for location permission…";
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        $("locate").disabled = wheel.busy;
-        if (wheel.busy) {
-          $("nearby-status").textContent =
-            "Location received. Click Use my location after the spin ends to search.";
-          return;
-        }
-        search(position.coords.latitude, position.coords.longitude);
-      },
-      (error) => {
-        $("locate").disabled = wheel.busy;
-        $("nearby-status").textContent =
-          error.code === 1
-            ? "Location permission was denied. Enter coordinates manually."
-            : "Your browser could not get a location. On file:// this may be blocked; enter coordinates manually.";
-        $("manual-details").open = true;
-      },
-      { enableHighAccuracy: false, timeout: 12000, maximumAge: 60000 },
-    );
+    updateWheel();
+    try {
+      const coords = await LocationService.current();
+      if (request !== locationRequest) return;
+      locating = false;
+      // Populate the fallback so the user can refine the radius or coordinates without another permission request.
+      $("latitude").value = coords.latitude.toFixed(6);
+      $("longitude").value = coords.longitude.toFixed(6);
+      await search(coords.latitude, coords.longitude);
+    } catch (error) {
+      if (request !== locationRequest) return;
+      $("nearby-status").textContent = error.message;
+      $("manual-details").open = true;
+      $("location-help").open = true;
+    } finally {
+      if (request === locationRequest) {
+        locating = false;
+        $("locate").disabled = wheel.busy || searching;
+        $("locate").removeAttribute('aria-busy');
+        $("locate").replaceChildren(UI.icon('location'), document.createTextNode('Use my location'));
+        updateWheel();
+      }
+    }
   };
   $("retry").onclick = () => {
-    if (lastSearch) search(lastSearch.lat, lastSearch.lon);
+    if (lastSearch) search(lastSearch.lat, lastSearch.lon, lastSearch.service);
   };
+  $("try-alternate").onclick = () => { if (lastSearch) search(lastSearch.lat, lastSearch.lon, 'alternate'); };
   $("nearby-all").onclick = () => {
     if (wheel.busy) return;
     nearbySelected = new Set(places.map((f) => f.id));
@@ -507,6 +568,12 @@
       "This removes your custom foods, selections, history and preferences from this browser.",
       () => {
         Object.assign(state, Store.fresh());
+        locationRequest++;
+        locating = false;
+        $("locate").disabled = false;
+        $("locate").removeAttribute('aria-busy');
+        $("locate").replaceChildren(UI.icon('location'),document.createTextNode('Use my location'));
+        customIcons.value = '🍲';
         places = [];
         nearbySelected.clear();
         lastSearch = null;
@@ -517,9 +584,11 @@
         $("radius").value = "3000";
         $("theme").value = state.theme;
         document.body.dataset.theme = state.theme;
+        wheel.setTheme(state.theme);
         $("avoid").checked = $("sound").checked = false;
         $("nearby-status").textContent = "Choose a location to see nearby places.";
         $("retry").hidden = true;
+        $("try-alternate").hidden = true;
         save();
         renderCategories();
         renderFoods();

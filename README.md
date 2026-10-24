@@ -13,12 +13,12 @@ No installation, Node.js, npm, backend, database, account, API key or build step
 ## Features
 
 - Search and seven category filters; Select All and Clear All apply to the complete food menu. Nearby places have separate selection controls.
-- Custom foods with trimmed names, duplicate validation, editing and deletion.
-- A 4.8-second eased Canvas wheel, fixed pointer, result dialog, optional synthesized sound and confetti. Reduced motion uses a brief transition without confetti.
+- Custom foods with trimmed names, duplicate validation, editing, deletion and 16 selectable food icons. Icons remain editable and persist across reloads; older custom foods receive a default icon.
+- A 4.8-second eased Canvas wheel, fixed pointer, result dialog and confetti. Enable **Sound on** for spinning ticks and a short ascending chime when the result appears. Sounds are synthesized locally and work offline. Reduced motion uses a brief transition without confetti.
 - Uniform selection among eligible choices. Avoid Last Result excludes the previous winner when two or more choices exist.
 - Empty and single-choice states; crowded wheels use numbers with an expandable full-name legend.
 - Real nearby restaurants, cafés and fast-food outlets with straight-line distances and Google Maps links.
-- Malaysian Kopitiam (default), Cute Foodie, Midnight Makan and Minimal Makan themes.
+- Malaysian Kopitiam (default), Cute Foodie, Midnight Makan and Minimal Makan palettes share the same layout, typography, controls and icon alignment. An original kopi-cup and floral-tile background is included locally; wheel colours follow each palette.
 - localStorage saves food selections, custom foods, theme, settings and the last ten spin results. Reset Defaults restores the initial eight default selections and retains custom foods. Reset All Data requires confirmation.
 - Responsive styling, keyboard controls, visible focus, native dialogs and status feedback.
 
@@ -26,9 +26,11 @@ No installation, Node.js, npm, backend, database, account, API key or build step
 
 Click **Use my location** to request browser permission. Geolocation on **file:// is not guaranteed**: many browsers block it. Denial does not affect offline features.
 
-Fallback: expand **Or enter coordinates manually**, enter latitude (−90 to 90) and longitude (−180 to 180), select 1, 3, 5 or 10 km and press **Find food**. For example, Kuala Lumpur is approximately `3.1390, 101.6869`. Obtain coordinates from your map app. After changing radius, run the search again.
+Fallback: expand **Enter coordinates manually**, enter latitude (−90 to 90) and longitude (−180 to 180), select 1, 3, 5 or 10 km and press **Find food**. For example, Kuala Lumpur is approximately `3.1390, 101.6869`. Obtain coordinates from your map app. After changing radius, run the search again.
 
-Search sends coordinates to the public Overpass service. Coordinates, search results and restaurant selections stay in session memory and are not stored permanently. History retains result names but no coordinates. Opening Google Maps sends the selected place query to Google. No analytics or remote fonts are used.
+The app distinguishes permission denial, provider unavailability, timeout, insecure contexts and host policy restrictions. A failed request opens manual input and troubleshooting help. Check your browser’s Location permission and your operating system’s Location Services. On Windows: Settings → Privacy & security → Location, including permission for desktop apps. Local-file access still depends on the browser; code cannot override denied permission. Device requests time out after 20 seconds, with a 25-second watchdog to release the UI if the browser never responds. A manual search supersedes an outstanding device request.
+
+Search sends coordinates to the public Overpass service at overpass-api.de. If that service fails, **Try alternate search** explicitly retries using the public Private.coffee Overpass instance; there is no automatic cross-service retry. Both return OpenStreetMap data. Coordinates, search results and restaurant selections stay in session memory and are not stored permanently. History retains result names but no coordinates. Opening Google Maps sends the selected place query to Google. No analytics or remote fonts are used.
 
 Overpass availability is not guaranteed. Requests have a 30-second client timeout, a 22-second API timeout and a maximum of 150 elements. Identical successful searches are cached in memory for five minutes. Results are sorted by distance within the returned subset; a dense area may not return the nearest 150 places. Nodes use their coordinates; ways and relations use centers. Unnamed places are explicitly labeled; no names, ratings, prices or hours are fabricated.
 
@@ -47,8 +49,10 @@ js/food-data.js     Default food catalogue
 js/storage.js       Versioned, validated localStorage
 js/wheel.js         Canvas animation and pointer alignment
 js/nearby.js        Overpass, cache, Haversine distance, map URLs
+js/location.js      Browser location checks, errors and timeout recovery
 js/app.js           UI and interaction state
-assets/            Original kopi-cup logo and ceramic tile SVGs
+components/         Shared SVG icons, accessible food-icon picker and styles
+assets/             Original kopi-cup logo and kopitiam background SVGs
 tests/verify.cjs    Optional developer verification
 tests/browser-check.cjs  Optional local Chrome desktop/mobile check
 LICENSE            MIT
@@ -60,6 +64,8 @@ Built with HTML5, CSS3 and vanilla ES6+ JavaScript, Canvas, Web Audio, Fetch, Ge
 
 Optional developer check: `node tests/verify.cjs`. Node is used only for this check, never to run the site. It verifies syntax, asset paths, DOM references, catalogue, corrupted storage recovery and persistence, wheel alignment with 1–150 choices, avoidance, distance, Overpass parsing, deduplication, cache reuse and input validation.
 
+Location regression checks also cover permission denial, unavailable providers, timeout/watchdog, insecure contexts and host policy. UI regression checks cover icon selection/editing/reload and alternate-search recovery. These checks use fixtures; they do not measure the user’s real location. During the live check, the primary service returned errors/timeouts and later a successful diagnostic response; the alternate service timed out. Public service availability remains a limitation.
+
 Manual acceptance checks:
 
 1. Open index.html offline. Select, clear, search, filter, add, edit and delete foods. Spin and confirm the pointer matches the result.
@@ -68,7 +74,7 @@ Manual acceptance checks:
 4. Online, test manual coordinates, denied location, nearby selection, Maps links, empty results, connection errors and Retry.
 5. Confirm Reset Defaults retains custom foods and Reset All Data clears preferences and history.
 
-Optional browser check: `node tests/browser-check.cjs` uses installed Chrome on Windows (or set `CHROME_PATH` for another location). It opens the actual file:// app at desktop and mobile viewport sizes, checks overflow, themes and checklist controls, and saves ignored screenshots in tests/. No packages are installed. Automated checks do not replace keyboard or live-network browser testing.
+Optional browser check: `node tests/browser-check.cjs` uses installed Chrome on Windows (or set `CHROME_PATH` for another location). It opens the actual file:// app at desktop and mobile viewport sizes, checks overflow, shared theme geometry, search-icon centering, custom-icon add/edit/persistence and checklist controls, and saves ignored screenshots in tests/. It also tests device location success/denial/unavailability/timeout using explicit test fixtures. Add `--live` for one real nearby request using the Kuala Lumpur example; add `--alternate` to use the alternate provider. No packages are installed. Real device positioning and browser/OS permissions still require manual verification.
 
 ## Limitations and troubleshooting
 

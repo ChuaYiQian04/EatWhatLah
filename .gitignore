@@ -3,3 +3,4 @@ tests/.browser-profile/
 tests/.browser-check-profile/
 tests/desktop.png
 tests/mobile.png
+tests/*-theme.png

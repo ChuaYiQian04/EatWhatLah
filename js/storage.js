@@ -41,6 +41,7 @@ window.Store = (() => {
             id: f.id,
             name: f.name.trim(),
             category: "Others",
+            icon: FoodData.iconChoices.some(choice => choice.icon === f.icon) ? f.icon : FoodData.icons.Others,
             custom: true,
           }));
       const valid = new Set(

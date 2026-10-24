@@ -35,6 +35,16 @@ window.FoodData = (() => {
   return {
     groups,
     icons,
+    iconChoices: [
+      {icon:'🍚',label:'Rice'}, {icon:'🍜',label:'Noodles'},
+      {icon:'🍝',label:'Pasta'}, {icon:'🍔',label:'Burger'},
+      {icon:'🍕',label:'Pizza'}, {icon:'🍗',label:'Chicken'},
+      {icon:'🥩',label:'Steak'}, {icon:'🐟',label:'Fish'},
+      {icon:'🥟',label:'Dumpling'}, {icon:'🍣',label:'Sushi'},
+      {icon:'🥗',label:'Salad'}, {icon:'🍲',label:'Hot pot'},
+      {icon:'🍞',label:'Bread'}, {icon:'🍧',label:'Dessert'},
+      {icon:'🍰',label:'Cake'}, {icon:'☕',label:'Coffee'},
+    ],
     defaults: Object.entries(groups).flatMap(([category, names]) =>
       names.map((name, i) => ({ id: category + "-" + i, name, category })),
     ),
