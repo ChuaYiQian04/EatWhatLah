@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#f8f2e6" />
+    <meta
+      name="description"
+      content="Can't decide what to eat? Spin a little Malaysian food magic. Free, offline-friendly and made for hungry people."
+    />
+    <title>Eat What Lah? — A little spin. A delicious decision.</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
+    <script defer src="js/food-data.js"></script>
+    <script defer src="js/storage.js"></script>
+    <script defer src="js/wheel.js"></script>
+    <script defer src="js/nearby.js"></script>
+    <script defer src="js/app.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#"
+        ><img class="brand-mark" src="assets/logo.svg" alt="" width="44" height="44" /> Eat What Lah<span class="red"
+          >?</span
+        ></a
+      >
+      <nav aria-label="Main navigation">
+        <a href="#makan">Let's makan</a><a href="#nearby">Find nearby</a
+        ><a href="#history">Recent spins</a>
+      </nav>
+      <label class="theme-label"
+        ><span class="sr-only">Colour theme</span
+        ><select id="theme">
+          <option value="kopitiam">Malaysian Kopitiam</option>
+          <option value="cute">Cute Foodie</option>
+          <option value="midnight">Midnight Makan</option>
+          <option value="minimal">Minimal Makan</option>
+        </select></label
+      >
+    </header>
+    <main>
+      <section class="hero">
+        <div class="eyebrow">A LITTLE KOPITIAM INSPIRATION</div>
+        <h1>
+          Less deciding.<br />More <span>makan.</span
+          >
+        </h1>
+        <p>
+          Pick your cravings. Spin to decide.
+        </p>
+      </section>
+      <section id="makan" class="makan-grid">
+        <article class="card wheel-card">
+          <div class="card-heading">
+            <div>
+              <span class="eyebrow">01 / SPIN</span>
+              <h2>The makan wheel</h2>
+            </div>
+            <span class="pill" id="wheel-count">8 choices</span>
+          </div>
+          <div class="wheel-wrap">
+            <div class="pointer" aria-hidden="true"></div>
+            <canvas
+              id="wheel"
+              width="800"
+              height="800"
+              role="img"
+              aria-label="Food wheel; selected choices are listed in the checklist"
+            ></canvas>
+            <div class="wheel-hub" aria-hidden="true">
+              makan<br /><b>lah!</b>
+            </div>
+          </div>
+          <p id="wheel-status" class="wheel-caption" aria-live="polite">
+            Ready when you are.
+          </p>
+          <button id="spin" class="primary spin-button">
+            Spin the wheel <span>↗</span>
+          </button>
+          <div class="wheel-settings">
+            <label><input id="avoid" type="checkbox" /> Avoid last result</label
+            ><label><input id="sound" type="checkbox" /> Sound on</label>
+          </div>
+          <details class="legend">
+            <summary>Wheel choices</summary>
+            <ol id="legend"></ol>
+          </details>
+        </article>
+        <article class="card choices-card">
+          <div class="card-heading">
+            <div>
+              <span class="eyebrow">02 / PICK</span>
+              <h2>Build your menu</h2>
+            </div>
+          </div>
+          <label class="search"
+            ><span aria-hidden="true">⌕</span
+            ><input
+              id="search"
+              type="search"
+              placeholder="Search food…"
+              aria-label="Search foods"
+          /></label>
+          <div
+            id="categories"
+            class="categories"
+            aria-label="Food categories"
+          ></div>
+          <div class="list-toolbar">
+            <span
+              ><strong id="selected-count">8</strong> selected
+              <span class="muted"
+                >· <span id="visible-count"></span> shown</span
+              ></span
+            >
+            <div>
+              <button id="select-all" class="text-button">Select all</button
+              ><span class="muted"> / </span
+              ><button id="clear-all" class="text-button">Clear all</button>
+            </div>
+          </div>
+          <div id="food-list" class="food-list"></div>
+          <form id="custom-form" class="custom-form">
+            <label for="custom-name">Add your own</label>
+            <div>
+              <input
+                id="custom-name"
+                maxlength="70"
+                placeholder="Food name"
+                required
+              /><button class="secondary" type="submit">+ Add</button>
+            </div>
+          </form>
+          <div class="panel-foot">
+            <button id="reset-defaults" class="text-button">
+              Reset defaults
+            </button>
+          </div>
+        </article>
+      </section>
+      <section id="nearby" class="card nearby-card">
+        <div class="nearby-intro">
+          <span class="eyebrow">03 / EXPLORE</span>
+          <h2>Find food nearby</h2>
+          <p>
+            Add nearby restaurants and cafés to your wheel.
+          </p>
+          <div class="online-note">
+            <span aria-hidden="true">◎</span> Internet required
+          </div>
+        </div>
+        <div class="nearby-controls">
+          <div class="location-row">
+            <button id="locate" class="primary">◎ Use my location</button
+            ><label
+              >Search radius<select id="radius">
+                <option value="1000">1 km</option>
+                <option value="3000" selected>3 km</option>
+                <option value="5000">5 km</option>
+                <option value="10000">10 km</option>
+              </select></label
+            >
+          </div>
+          <details id="manual-details">
+            <summary>Enter coordinates manually</summary>
+            <form id="coordinates">
+              <label
+                >Latitude<input
+                  id="latitude"
+                  type="number"
+                  min="-90"
+                  max="90"
+                  step="any"
+                  placeholder="3.1390"
+                  required /></label
+              ><label
+                >Longitude<input
+                  id="longitude"
+                  type="number"
+                  min="-180"
+                  max="180"
+                  step="any"
+                  placeholder="101.6869"
+                  required /></label
+              ><button class="secondary">Find food</button>
+            </form>
+          </details>
+          <p class="fine-print">
+            Location may be blocked on file://. Enter coordinates instead;
+            they won’t be saved.
+          </p>
+        </div>
+        <div class="nearby-results">
+          <p id="nearby-status" role="status">
+            Choose a location to see nearby places.
+          </p>
+          <button id="retry" class="secondary" hidden>Retry search</button>
+          <div id="nearby-toolbar" hidden>
+            <button id="nearby-all" class="text-button">
+              Select all nearby
+            </button>
+            ·
+            <button id="nearby-clear" class="text-button">Clear nearby</button>
+          </div>
+          <div id="places"></div>
+          <p class="fine-print">
+            Place data ©
+            <a
+              href="https://www.openstreetmap.org/copyright"
+              target="_blank"
+              rel="noopener"
+              >OpenStreetMap contributors</a
+            > · Overpass API. Availability varies; distances are straight-line estimates.
+          </p>
+        </div>
+      </section>
+      <section id="history" class="history-section">
+        <div class="card-heading">
+          <div>
+            <h2>Recent spins</h2>
+          </div>
+          <span class="muted">Your last 10 spins</span>
+        </div>
+        <div id="history-list" class="history-list"></div>
+      </section>
+    </main>
+    <footer>
+      <a class="brand" href="#"><img class="brand-mark" src="assets/logo.svg" alt="" width="30" height="30" /> Eat What Lah?</a
+      ><button id="reset-all" class="text-button">Reset all data</button>
+    </footer>
+    <div id="toast" role="status" class="toast" hidden></div>
+    <dialog id="result-dialog">
+      <div id="confetti" aria-hidden="true"></div>
+      <button class="dialog-close" id="close-result" aria-label="Close result">
+        ×</button
+      ><span class="eyebrow">LET’S MAKAN</span>
+      <div class="result-emoji">🍽️</div>
+      <p>Your pick today</p>
+      <h2 id="winner-name"></h2>
+      <a id="winner-map" class="secondary" target="_blank" rel="noopener" hidden
+        >Find on Google Maps ↗</a
+      ><button id="spin-again" class="primary">Spin again ↻</button>
+    </dialog>
+    <dialog id="confirm-dialog">
+      <h2 id="confirm-title"></h2>
+      <p id="confirm-message"></p>
+      <div class="dialog-actions">
+        <button id="confirm-cancel" class="secondary">Cancel</button
+        ><button id="confirm-ok" class="primary">Confirm</button>
+      </div>
+    </dialog>
+    <dialog id="edit-dialog">
+      <form id="edit-form">
+        <h2>Edit your craving</h2>
+        <label for="edit-name">Food name</label
+        ><input id="edit-name" maxlength="70" required />
+        <div class="dialog-actions">
+          <button id="edit-cancel" type="button" class="secondary">
+            Cancel</button
+          ><button class="primary">Save changes</button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>
