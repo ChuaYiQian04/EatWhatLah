@@ -61,6 +61,7 @@
             </div>
             <span class="pill" id="wheel-count">8 choices</span>
           </div>
+          <div class="wheel-stage">
           <div class="wheel-wrap">
             <div class="pointer" aria-hidden="true"></div>
             <canvas
@@ -77,6 +78,8 @@
           <p id="wheel-status" class="wheel-caption" aria-live="polite">
             Ready when you are.
           </p>
+          </div>
+          <div class="panel-actions wheel-actions">
           <button id="spin" class="primary spin-button">
             Spin the wheel <span data-icon="arrow"></span>
           </button>
@@ -88,6 +91,7 @@
             <summary>Wheel choices</summary>
             <ol id="legend"></ol>
           </details>
+          </div>
         </article>
         <article class="card choices-card">
           <div class="card-heading">
@@ -123,6 +127,7 @@
             </div>
           </div>
           <div id="food-list" class="food-list"></div>
+          <div class="panel-actions menu-actions">
           <form id="custom-form" class="custom-form">
             <label for="custom-name">Add your own</label>
             <div>
@@ -133,12 +138,16 @@
                 required
               /><button class="secondary" type="submit"><span data-icon="plus"></span> Add</button>
             </div>
-            <div id="custom-icon-picker"></div>
+            <details class="custom-icon-options">
+              <summary><span id="custom-icon-preview" class="food-icon" aria-hidden="true">🍲</span> Choose food icon</summary>
+              <div id="custom-icon-picker"></div>
+            </details>
           </form>
           <div class="panel-foot">
             <button id="reset-defaults" class="text-button">
               Reset defaults
             </button>
+          </div>
           </div>
         </article>
       </section>
@@ -205,14 +214,24 @@
           </p>
           <button id="retry" class="secondary" hidden>Retry search</button>
           <button id="try-alternate" class="secondary" title="Search OpenStreetMap using Private.coffee’s public Overpass service" hidden>Try alternate search</button>
-          <div id="nearby-toolbar" hidden>
-            <button id="nearby-all" class="text-button">
-              Select all nearby
-            </button>
-            ·
-            <button id="nearby-clear" class="text-button">Clear nearby</button>
+          <div id="nearby-browser" hidden>
+            <div class="nearby-filters">
+              <label class="search"><span class="icon-slot" data-icon="search" aria-hidden="true"></span><input id="place-search" type="search" placeholder="Search nearby places…" aria-label="Search within nearby results" aria-controls="places"></label>
+              <label class="place-type-label"><span class="sr-only">Place type</span><select id="place-type" aria-controls="places"><option value="all">All places</option><option value="Restaurant">Restaurants</option><option value="Café">Cafés</option><option value="Fast food">Fast food</option></select></label>
+              <label class="selected-filter"><input id="places-selected-only" type="checkbox" aria-controls="places"> Selected only</label>
+            </div>
+            <div id="nearby-toolbar" class="nearby-list-toolbar">
+              <span id="nearby-range" role="status"></span>
+              <span id="nearby-selection-count" class="pill" role="status">0 selected</span>
+              <div class="nearby-bulk-actions"><button id="nearby-all" class="text-button">Select this page</button><button id="nearby-clear" class="text-button">Clear nearby</button></div>
+            </div>
           </div>
-          <div id="places"></div>
+          <div id="places" aria-label="Nearby places"></div>
+          <nav id="nearby-pagination" class="nearby-pagination" aria-label="Nearby results pages" hidden>
+            <button id="places-prev" class="secondary" aria-controls="places">← Previous</button>
+            <span id="places-page" aria-live="polite"></span>
+            <button id="places-next" class="secondary" aria-controls="places">Next →</button>
+          </nav>
           <p class="fine-print">
             Place data ©
             <a

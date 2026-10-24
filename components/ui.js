@@ -25,7 +25,7 @@ window.UI = (() => {
   function mountIcons() {
     document.querySelectorAll('[data-icon]').forEach(node => node.replaceChildren(icon(node.dataset.icon)));
   }
-  function iconPicker(container, name, initial = '🍲') {
+  function iconPicker(container, name, initial = '🍲', onChange = () => {}) {
     const fieldset = document.createElement('fieldset');
     fieldset.className = 'icon-picker';
     const legend = document.createElement('legend'); legend.textContent = 'Food icon';
@@ -34,13 +34,14 @@ window.UI = (() => {
       const label = document.createElement('label'), input = document.createElement('input'), face = document.createElement('span');
       input.type = 'radio'; input.name = name; input.value = choice.icon;
       input.setAttribute('aria-label', choice.label); input.checked = choice.icon === initial;
+      input.onchange = () => { if (input.checked) onChange(input.value); };
       face.textContent = choice.icon; face.setAttribute('aria-hidden', 'true');
       label.title = choice.label; label.append(input, face); grid.append(label); return input;
     });
     fieldset.append(legend, grid); container.replaceChildren(fieldset);
     return {
       get value() { return inputs.find(input => input.checked)?.value || '🍲'; },
-      set value(value) { const valid = FoodData.iconChoices.some(choice => choice.icon === value) ? value : '🍲'; inputs.forEach(input => input.checked = input.value === valid); },
+      set value(value) { const valid = FoodData.iconChoices.some(choice => choice.icon === value) ? value : '🍲'; inputs.forEach(input => input.checked = input.value === valid); onChange(valid); },
       set disabled(value) { fieldset.disabled = value; },
     };
   }

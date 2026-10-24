@@ -6,6 +6,7 @@
     wheel = new MakanWheel($("wheel"));
   let category = "All",
     places = [],
+    placePage = 0,
     nearbySelected = new Set(),
     lastSearch = null,
     searching = false,
@@ -16,13 +17,14 @@
     audio = null,
     toastTimer,
     storageWarned = false;
+  const placesPerPage = 8;
   const foods = () => [...FoodData.defaults, ...state.custom];
   const options = () => [
     ...foods().filter((f) => state.selected.includes(f.id)),
     ...places.filter((f) => nearbySelected.has(f.id)),
   ];
   UI.mountIcons();
-  const customIcons = UI.iconPicker($("custom-icon-picker"), "custom-icon"),
+  const customIcons = UI.iconPicker($("custom-icon-picker"), "custom-icon", '🍲', value => { $("custom-icon-preview").textContent = value; }),
     editIcons = UI.iconPicker($("edit-icon-picker"), "edit-icon");
   function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -410,10 +412,39 @@
       save();
     };
   });
+  function filteredPlaces() {
+    const query = $("place-search").value.trim().toLowerCase(), type = $("place-type").value;
+    return places.filter(place =>
+      (!query || place.name.toLowerCase().includes(query)) &&
+      (type === 'all' || place.category === type) &&
+      (!$("places-selected-only").checked || nearbySelected.has(place.id)));
+  }
+  function resetPlaceFilters() {
+    placePage = 0;
+    $("place-search").value = '';
+    $("place-type").value = 'all';
+    $("places-selected-only").checked = false;
+  }
+  function updatePlaceSelection() {
+    $("nearby-selection-count").textContent = `${nearbySelected.size} selected`;
+    $("nearby-clear").disabled = wheel.busy || !nearbySelected.size;
+  }
   function renderPlaces() {
-    $("nearby-toolbar").hidden = !places.length;
+    const filtered = filteredPlaces(), pages = Math.ceil(filtered.length / placesPerPage);
+    placePage = Math.max(0, Math.min(placePage, pages - 1));
+    const start = placePage * placesPerPage, shown = filtered.slice(start, start + placesPerPage);
+    $("nearby-browser").hidden = !places.length;
+    $("nearby-pagination").hidden = pages <= 1;
+    $("nearby-range").textContent = filtered.length
+      ? `${start + 1}–${start + shown.length} of ${filtered.length} · closest first`
+      : 'No matching places';
+    $("places-page").textContent = `Page ${placePage + 1} of ${Math.max(1, pages)}`;
+    $("places-prev").disabled = placePage === 0;
+    $("places-next").disabled = placePage >= pages - 1;
+    $("nearby-all").disabled = wheel.busy || !shown.length;
+    updatePlaceSelection();
     $("places").replaceChildren(
-      ...places.map((place) => {
+      ...shown.map((place) => {
         const row = el("div", "place"),
           label = el("label"),
           check = el("input"),
@@ -424,7 +455,14 @@
         check.onchange = () => {
           if (check.checked) nearbySelected.add(place.id);
           else nearbySelected.delete(place.id);
+          updatePlaceSelection();
           updateWheel();
+          if ($("places-selected-only").checked) {
+            renderPlaces();
+            // Keep keyboard navigation within the selected results after removing a row.
+            const target = $("places").querySelector('input') || $("places-selected-only");
+            target.focus({preventScroll:true});
+          }
         };
         body.append(
           document.createTextNode(place.name),
@@ -452,7 +490,16 @@
         return row;
       }),
     );
+    if (places.length && !shown.length) {
+      const empty = el('div', 'nearby-empty'), message = el('p', '', 'No places match your filters.'), reset = el('button', 'text-button', 'Show all places');
+      reset.onclick = () => { resetPlaceFilters(); renderPlaces(); $("place-search").focus({preventScroll:true}); };
+      empty.append(message, reset); $("places").append(empty);
+    }
   }
+  $("place-search").oninput = () => { placePage = 0; renderPlaces(); };
+  $("place-type").onchange = $("places-selected-only").onchange = () => { placePage = 0; renderPlaces(); };
+  $("places-prev").onclick = () => { placePage--; renderPlaces(); };
+  $("places-next").onclick = () => { placePage++; renderPlaces(); };
   async function search(lat, lon, service = 'primary') {
     if (searching || wheel.busy) return;
     // Manual search supersedes an outstanding device request; stale callbacks cannot overwrite it.
@@ -481,13 +528,14 @@
         return;
       }
       places = results;
+      resetPlaceFilters();
       nearbySelected = new Set(
         [...nearbySelected].filter((id) => places.some((p) => p.id === id)),
       );
       renderPlaces();
       updateWheel();
       $("nearby-status").textContent = places.length
-        ? `${places.length} places found (up to 150). Select places to add to your wheel.`
+        ? `${places.length} places found. Pick a few for your wheel.`
         : "No places found in this area. Try a wider radius or different coordinates.";
     } catch (error) {
       $("nearby-status").textContent =
@@ -552,7 +600,8 @@
   $("try-alternate").onclick = () => { if (lastSearch) search(lastSearch.lat, lastSearch.lon, 'alternate'); };
   $("nearby-all").onclick = () => {
     if (wheel.busy) return;
-    nearbySelected = new Set(places.map((f) => f.id));
+    filteredPlaces().slice(placePage * placesPerPage, (placePage + 1) * placesPerPage)
+      .forEach(place => nearbySelected.add(place.id));
     renderPlaces();
     updateWheel();
   };
@@ -575,6 +624,7 @@
         $("locate").replaceChildren(UI.icon('location'),document.createTextNode('Use my location'));
         customIcons.value = '🍲';
         places = [];
+        resetPlaceFilters();
         nearbySelected.clear();
         lastSearch = null;
         category = "All";

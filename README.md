@@ -18,6 +18,7 @@ No installation, Node.js, npm, backend, database, account, API key or build step
 - Uniform selection among eligible choices. Avoid Last Result excludes the previous winner when two or more choices exist.
 - Empty and single-choice states; crowded wheels use numbers with an expandable full-name legend.
 - Real nearby restaurants, cafés and fast-food outlets with straight-line distances and Google Maps links.
+- Nearby results show eight places per page, closest first within the returned results. Search names, filter place types or view selected places only. Selections stay on the wheel across pages and filters. **Select this page** adds only the visible eight (or fewer); **Clear nearby** removes every restaurant selection. Browsing and filtering use the existing results without extra API requests.
 - Malaysian Kopitiam (default), Cute Foodie, Midnight Makan and Minimal Makan palettes share the same layout, typography, controls and icon alignment. An original kopi-cup and floral-tile background is included locally; wheel colours follow each palette.
 - localStorage saves food selections, custom foods, theme, settings and the last ten spin results. Reset Defaults restores the initial eight default selections and retains custom foods. Reset All Data requires confirmation.
 - Responsive styling, keyboard controls, visible focus, native dialogs and status feedback.

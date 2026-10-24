@@ -54,6 +54,26 @@ async function run(){
     await evaluate(`window.__realSearch=Nearby.search;Nearby.search=async(lat,lon)=>{window.__searched=[lat,lon];return [{id:'test-place',name:'Test fixture café',lat,lon,category:'Café',distance:20,nearby:true}]};Object.defineProperty(navigator,'geolocation',{configurable:true,value:{getCurrentPosition(success){success({coords:{latitude:3.139,longitude:101.6869}})}}});document.getElementById('locate').click();`);await delay(30);
     assert.deepEqual(await evaluate('window.__searched'),[3.139,101.6869]);assert.equal(await evaluate(`document.querySelectorAll('.place').length`),1);
     assert.equal(await evaluate(`document.getElementById('locate').disabled`),false);
+    await evaluate(`window.__pageSearches=0;Nearby.search=async(lat,lon)=>{window.__pageSearches++;return Array.from({length:150},(_,i)=>({id:'fixture-'+i,name:'Place '+String(i).padStart(3,'0'),lat,lon,category:['Restaurant','Café','Fast food'][i%3],distance:(i+1)*10,nearby:true}))};document.getElementById('coordinates').requestSubmit()`);await delay(20);
+    assert.equal(await evaluate(`document.querySelectorAll('.place').length`),8);
+    assert.equal(await evaluate(`document.getElementById('places-page').textContent`),'Page 1 of 19');
+    await evaluate(`document.querySelector('.place input').click();document.getElementById('places-next').click();document.querySelector('.place input').click()`);
+    assert.equal(await evaluate(`document.getElementById('nearby-selection-count').textContent`),'2 selected');
+    await evaluate(`document.getElementById('places-prev').click()`);assert.equal(await evaluate(`document.querySelector('.place input').checked`),true);
+    await evaluate(`document.getElementById('places-selected-only').click()`);assert.equal(await evaluate(`document.querySelectorAll('.place').length`),2);
+    assert.equal(await evaluate(`document.getElementById('nearby-pagination').hidden`),true);
+    await evaluate(`document.querySelector('.place input').click()`);assert.equal(await evaluate(`document.querySelectorAll('.place').length`),1);
+    await evaluate(`document.getElementById('places-selected-only').click();document.getElementById('place-search').value='Place 149';document.getElementById('place-search').dispatchEvent(new Event('input'))`);
+    assert.equal(await evaluate(`document.querySelectorAll('.place').length`),1);
+    await evaluate(`document.getElementById('place-search').value='not a real place';document.getElementById('place-search').dispatchEvent(new Event('input'))`);assert.equal(await evaluate(`document.querySelectorAll('.place').length`),0);
+    await evaluate(`document.querySelector('.nearby-empty button').click();document.getElementById('place-type').value='Café';document.getElementById('place-type').dispatchEvent(new Event('change'));document.getElementById('nearby-all').click()`);
+    assert.equal(await evaluate(`document.getElementById('nearby-selection-count').textContent`),'9 selected');
+    assert.equal(await evaluate(`document.getElementById('nearby-range').textContent.includes('of 50')`),true);
+    assert.equal(await evaluate('window.__pageSearches'),1,'Filtering or pagination fetched again');
+    assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true,'Nearby controls overflow');
+    if(name!=='small-mobile'){const page=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});fs.writeFileSync(path.join(__dirname,name+'-nearby.png'),Buffer.from(page.data,'base64'));}
+    await evaluate(`document.getElementById('nearby-clear').click()`);assert.equal(await evaluate(`document.getElementById('nearby-selection-count').textContent`),'0 selected');
+    assert.equal(await evaluate(`document.getElementById('wheel-count').textContent`),'8 choices');
     await evaluate(`Nearby.search=async()=>{throw new Error('Test fixture: public search unavailable')};document.getElementById('coordinates').requestSubmit()`);await delay(20);
     assert.equal(await evaluate(`document.getElementById('try-alternate').hidden`),false);
     await evaluate(`Nearby.search=async(lat,lon,radius,service)=>{window.__service=service;return []};document.getElementById('try-alternate').click()`);await delay(20);assert.equal(await evaluate('window.__service'),'alternate');
@@ -63,6 +83,6 @@ async function run(){
       const live=await evaluate(`Nearby.search(3.139,101.6869,1000,'${service}').then(places=>({ok:true,count:places.length}),error=>({ok:false,error:error.message}))`);console.log('Live Overpass from file:// ('+service+'):',JSON.stringify(live));
     }
   }
-  assert.equal(errors.length,0,errors.join('\n'));console.log('PASS: file://, desktop/mobile layouts, consistent theme geometry, centered search icons, custom icon add/edit/reload, checklist controls, mocked location success/denial/unavailable/timeout and fallback, no uncaught JavaScript exceptions.');
+  assert.equal(errors.length,0,errors.join('\n'));console.log('PASS: file://, desktop/mobile layouts, consistent themes, centered icons, custom icon persistence, checklist, location/fallback, 150-place pagination/filtering/selection retention/page-only bulk selection/no repeat requests, no uncaught JavaScript exceptions.');
 }
 run().catch(error=>{console.error(error);process.exitCode=1;}).finally(async()=>{if(socket){try{await send('Browser.close');}catch{}socket.close();}child.kill();});
